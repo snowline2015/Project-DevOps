@@ -18,17 +18,6 @@ pipeline {
         }
       }
     }
-
-    stage('Test Mkdocs' ) {
-                agent {
-                docker { image 'snowline2015/project_19127102:$BUILD_NUMBER' }
-            }
-            steps {
-                sh 'project_19127102 --version'
-            }
-        }
-
-
     stage('Deploy Image') {
       steps{
         script {
