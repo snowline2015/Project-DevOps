@@ -1,22 +1,46 @@
 pipeline {
-    agent any
-    environment {
-     DOCKERHUB_CREDENTIALS = credentials("dockerhub-19127102")
-    }
+  environment {
+    registry = "snowline2015/project_19127102"
+    registryCredential = 'docker-hub'
+    dockerImage = ''
+  }
+  agent any
   stages {
-    stage('Build') {
+    stage('Cloning Git') {
       steps {
-        sh 'docker build -t 19127102/project_devops:latest .'
+        git 'https://github.com/19127102/Project-DevOps.git'
       }
     }
-    stage('Login') {
-     steps {
-        sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+    stage('Building image') {
+      steps{
+        script {
+          dockerImage = docker.build registry + ":$BUILD_NUMBER"
+        }
       }
     }
-    stage('Push') {
-      steps {
-        sh 'docker push 19127102/project_devops:latest'
+
+    stage('Test Mkdocs' ) {
+                agent {
+                docker { image 'snowline2015/project_19127102:$BUILD_NUMBER' }
+            }
+            steps {
+                sh 'project_19127102 --version'
+            }
+        }
+
+
+    stage('Deploy Image') {
+      steps{
+        script {
+          docker.withRegistry( '', registryCredential ) {
+            dockerImage.push()
+          }
+        }
+      }
+    }
+    stage('Remove Unused docker image') {
+      steps{
+        sh "docker rmi $registry:$BUILD_NUMBER"
       }
     }
   }
